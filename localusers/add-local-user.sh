@@ -6,13 +6,9 @@
 # Inform script runner if script was unable to create user for some reason and exits 1.
 # Display username, password, and host where account was created.
 
-# Get hostname
-
-# Get UID
-
 # Check if user is root and exit if not
 if [[ "$UID" -ne 0 ]]; then
-	echo 'Rerun as root'
+	echo 'Must be root'
 	exit 1
 fi
 
@@ -26,18 +22,38 @@ read -p 'Enter full name of user: ' fullname
 read -p 'Enter initial password: ' password
 
 # Create user
-if ! $( adduser -c "$fullname" -m "$username" ); then
-	echo 'User creation failed'
+useradd -c "$fullname" -m "$username"
+
+# Check if useradd succeeded
+if [[ $? -ne 0 ]]; then
+	echo 'Account creation failed'
 	exit 1
 fi
 
 # Create password
-echo "$password" | passwd --stdin "$username"
+#echo "$password" | passwd --stdin "$username"
+passwd --stdin "$username" <<< "$password"
+
+# Check if passwd succeeded
+if [[ $? -ne 0 ]]; then
+	echo 'Password creation failed'
+	exit 1
+fi
 
 # Require password be changed on first login
 passwd -e "$username"
 
 # Display username, password, and host
-echo "Username created: $username"
-echo "Initial password: $password"
-echo "User created on: $HOSTNAME"
+cat <<-EOF
+
+	username:
+	$username
+
+	password:
+	$password
+
+	host:
+	$HOSTNAME
+EOF
+
+exit 0
