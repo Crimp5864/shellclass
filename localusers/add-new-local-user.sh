@@ -1,7 +1,10 @@
 #!/usr/bin/env bash
 
 # Must be executed as root. If not executed as root must exit immediately with status 1.
-# Prompt script runner to enter username, full name of user, and initial password.
+# Take username and full name (comment) as arguments on the command line.
+# Provide usage statement if username is not provided as an argument.
+# Use first argument as the username and any remaining arguments as the comment.
+# Automatically generate a unique password.
 # Create a user on the local system with provided input.
 # Inform script runner if script was unable to create user for some reason and exits 1.
 # Display username, password, and host where account was created.
