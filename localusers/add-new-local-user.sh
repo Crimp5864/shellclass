@@ -15,17 +15,24 @@ if [[ "$UID" -ne 0 ]]; then
 	exit 1
 fi
 
-# Get username
-read -p 'Enter desired username: ' username
+# Provide usage statement if no username supplied
+if [[ "$#" -lt 1 ]]; then
+	echo "Usage: $(basename $0) USERNAME [COMMENT]"
+	exit 1
+fi
 
-# Get full name
-read -p 'Enter full name of user: ' fullname
+# Take username and full name as arguments
+username="$1"
+shift
+if [[ -n "$*" ]]; then
+	fullname="$*"
+fi
 
-# Get password
-read -p 'Enter initial password: ' password
+# Automatically generate unique password
+password=$(date +%s%N${RANDOM}${RANDOM} | sha256sum | head -c 16)
 
 # Create user
-useradd --coment "$fullname" --create-home "$username"
+useradd --comment "$fullname" --create-home "$username"
 
 # Check if useradd succeeded
 if [[ $? -ne 0 ]]; then
@@ -34,7 +41,6 @@ if [[ $? -ne 0 ]]; then
 fi
 
 # Create password
-#echo "$password" | passwd --stdin "$username"
 passwd --stdin "$username" <<< "$password"
 
 # Check if passwd succeeded
@@ -46,9 +52,14 @@ fi
 # Require password be changed on first login
 passwd -e "$username"
 
+if [[ $? -ne 0 ]]; then
+	echo 'Account expiration failed'
+	exit 1
+fi
+
 # Display username, password, and host
 cat <<-EOF
-
+	---
 	username:
 	$username
 
@@ -57,6 +68,7 @@ cat <<-EOF
 
 	host:
 	$HOSTNAME
+	---
 EOF
 
 exit 0
