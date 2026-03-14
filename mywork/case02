@@ -1,0 +1,69 @@
+#!/usr/bin/env bash
+
+# Case statement playground
+
+print_usage () {
+	# Print usage and exit with error.
+	echo "Try $script_name --help for more information."
+	exit 1
+}
+
+print_help () {
+	# Print help and exit with success.
+	read -r -d '' msg <<-EOF
+		$script_name - Demonstrate script arguments, flags, and options.
+
+		Usage:
+		  $script_name [OPTION]...
+		  $script_name -h | --help
+
+		Description:
+		  Provides a playground for adding and editing options passed to the script.
+
+		Options:
+		  -h, --help		Show help message and exit
+		  -v, --verbose		Enable verbose output
+		  -o, --output FILE	Output to FILE
+EOF
+	printf '%s\n' "$msg"
+	exit 0
+}
+
+script_name="${0##*/}"
+
+if [[ "$#" = 0 ]]; then
+	print_usage
+fi
+
+for arg in "$@"; do
+	case "$arg" in
+		-h|--help)
+			print_help
+			;;
+	esac
+done
+
+while [[ "$#" -gt 0 ]]; do
+	case "$1" in
+		-v|--verbose)
+			verbose=1
+			echo 'Verbose output enabled'
+			shift
+			;;
+		-o|--output)
+			if [[ "$2" == -* || ! -v "$2" ]]; then
+				echo 'Output file required'
+				exit 1
+			else
+				output=1
+				output_file="$2"
+				echo "Output enabled to $2"
+				shift 2
+			fi
+			;;
+		*)
+			echo "Unknown argument: $1"
+			exit 1
+			;;
+	esac
+done
