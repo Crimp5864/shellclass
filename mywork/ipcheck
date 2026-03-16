@@ -33,8 +33,16 @@ EOF
 
 get_ip () {
 	local ip_check_url='icanhazip.com'
-
-	curl "$ip_selector$ip_check_url"
+	local ip_prefix
+	# Get IP address based on the flag passed
+	if [[ "$ipv4" = 1 ]]; then
+		ip_prefix='ipv4.'
+	elif [[ "$ipv6" = 1 ]]; then
+		ip_prefix='ipv6.'
+	elif [[ "$all" = 1 ]]; then
+		ip_prefix='ipv{4,6}.'
+	fi
+	curl "$ip_prefix$ip_check_url"
 	exit 0
 }
 
@@ -60,17 +68,17 @@ fi
 
 case "$1" in
 	-4)
-		ip_selector='4'
+		ipv4=1
 		echo 'IPv4 selected'
 		get_ip
 		;;
 	-6)
-		ip_selector='6'
+		ipv6=1
 		echo 'IPv6 selected'
 		get_ip
 		;;
 	-a|--all)
-		ip_selector='both'
+		all=1
 		echo 'IPv4 and IPv6 selected'
 		get_ip
 		;;
