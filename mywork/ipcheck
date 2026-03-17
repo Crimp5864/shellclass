@@ -11,7 +11,8 @@ print_usage () {
 
 print_help () {
 	# Print help and exit with success.
-	read -r -d '' msg <<-EOF
+	local help
+	read -r -d '' help <<-EOF
 		$script_name - Simple tool to print public ip address 
 
 		Usage:
@@ -27,13 +28,15 @@ print_help () {
 		  -6			Get IPv6 address
 		  -a, --all		Get both IPv4 and IPv6 addresses
 EOF
-	printf '%s\n' "$msg"
+	#printf '%s\n' "$help"
+	echo "$help"
 	exit 0
 }
 
 get_ip () {
 	local ip_check_url='icanhazip.com'
 	local ip_prefix
+
 	# Get IP address based on the flag passed
 	if [[ "$ipv4" = 1 ]]; then
 		ip_prefix='ipv4.'
@@ -42,7 +45,7 @@ get_ip () {
 	elif [[ "$all" = 1 ]]; then
 		ip_prefix='ipv{4,6}.'
 	fi
-	curl "$ip_prefix$ip_check_url"
+	curl "https://$ip_prefix$ip_check_url"
 	exit 0
 }
 
