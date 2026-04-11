@@ -17,7 +17,7 @@
 usage () {
 	# Print usage and exit with error.
 	read -r -d '' msg <<-EOF
-		Usage: ${0##*/} [-adr] USEERNAME
+		Usage: ${0##*/} [-adr] USERNAME
 		Disable account for USERNAME
 		  -a	Archive home directory
 		  -d	Delete account
@@ -36,7 +36,7 @@ fi
 # Take username and full name as arguments
 username="$1"
 
-# Create user
+# Creat user
 useradd --comment "$fullname" --create-home "$username" &> /dev/null
 
 # Check if useradd succeeded
