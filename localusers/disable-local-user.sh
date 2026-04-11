@@ -33,11 +33,9 @@ if [[ "$UID" -ne 0 ]]; then
 	exit 1
 fi
 
-# Take username and full name as arguments
-username="$1"
-
-# Creat user
-useradd --comment "$fullname" --create-home "$username" &> /dev/null
+# Disable user
+userdel $1 #&> /dev/null
+exit 1
 
 # Check if useradd succeeded
 if [[ $? -ne 0 ]]; then
