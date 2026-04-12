@@ -38,13 +38,13 @@ fi
 while getopts adr option; do
 	case "$option" in
 		a)
-			archive='true'
+			archive_home='true'
 			;;
 		d)
-			delete='true'
+			delete_user='true'
 			;;
 		r)
-			remove='-r'
+			remove_home='-r'
 			;;
 		?)
 			usage
@@ -72,7 +72,7 @@ for username in "$@"; do
 	fi
 
 	# Create an archive if requested to do so
-	if [[ "$archive" = 'true' ]]; then
+	if [[ "$archive_home" = 'true' ]]; then
 		# Make sure archive_dir directory exists
 		if [[ ! -d "$archive_dir" ]]; then
 			echo "Creating $archive_dir directory"
@@ -95,3 +95,32 @@ for username in "$@"; do
 			fi
 		else
 			echo "$home_dir does not exist or is not a directory" >&2
+			exit 1
+		fi
+
+	fi
+
+	# Delete account if requested to do so
+	if [[ "$delete_user" = 'true' ]]; then
+		# Delete user
+		userdel $remove_home "$username" &> /dev/null
+
+		# Check to see if userdel succeeded
+		if [[ "$?" -ne 0 ]]; then
+			echo "Unable to delete account $username" >&2
+			exit 1
+		fi
+		echo "The account $username was deleted"
+	else
+		chage -E 0 "$username"
+
+		# Check to see if chage succeeded
+		if [[ "$?" -ne 0 ]]; then
+			echo "Unable to disable account $username" >&2
+			exit 1
+		fi
+		echo "The account $username was disabled"
+	fi
+done
+
+exit 0
