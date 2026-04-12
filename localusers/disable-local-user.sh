@@ -17,7 +17,7 @@
 usage () {
 	# Print usage and exit with error.
 	read -r -d '' msg <<-EOF
-		Usage: ${0##*/} [-adr] USERNAME
+		Usage: ${0##*/} [-adr] USERNAME [USERNAME]
 		Disable account for USERNAME
 		  -a	Archive home directory
 		  -d	Delete account
@@ -27,51 +27,71 @@ EOF
 	exit 1
 }
 
-# Check if user is root and exit if not
+archive_dir='/archive'
+
+# Check if user is root and exit with error if not
 if [[ "$UID" -ne 0 ]]; then
 	echo 'Must be root' >&2
 	exit 1
 fi
 
-# Disable user
-userdel $1 #&> /dev/null
-exit 1
+while getopts adr option; do
+	case "$option" in
+		a)
+			archive='true'
+			;;
+		d)
+			delete='true'
+			;;
+		r)
+			remove='-r'
+			;;
+		?)
+			usage
+			;;
+	esac
+done
 
-# Check if useradd succeeded
-if [[ $? -ne 0 ]]; then
-	echo 'Account creation failed' >&2
-	exit 1
+# Remove the options while leaving the remaining arguments
+shift "$(( OPTIND - 1 ))"
+
+# If no arguments are provided print usage and exit with error
+if [[ "$#" -lt 1 ]]; then
+	usage
 fi
 
-# Create password
-passwd --stdin "$username" <<< "$password" &> /dev/null
+# Loop through all the usernames supplied as arguments
+for username in "$@"; do
+	echo "Processing user: $username"
+	
+	# Make sure UID is at least 1000
+	userid=$(id -u $username)
+	if [[ "$userid" -lt 1000 ]]; then
+		echo "Refusing to remove $username account with UID $uiserid" >&2
+		exit 1
+	fi
 
-# Check if passwd succeeded
-if [[ $? -ne 0 ]]; then
-	echo 'Password creation failed' >&2
-	exit 1
-fi
+	# Create an archive if requested to do so
+	if [[ "$archive" = 'true' ]]; then
+		# Make sure archive_dir directory exists
+		if [[ ! -d "$archive_dir" ]]; then
+			echo "Creating $archive_dir directory"
+			mkdir -p "$archive_dir"
+			if [[ "$?" -ne 0 ]]; then
+				echo "The archive directory $archive_dir could not be created" >&2
+				exit 1
+			fi
+		fi
 
-# Require password be changed on first login
-passwd -e "$username" &> /dev/null
-
-if [[ $? -ne 0 ]]; then
-	echo 'Account expiration failed' >&2
-	exit 1
-fi
-
-# Display username, password, and host
-cat <<-EOF
-	---
-	username:
-	$username
-
-	password:
-	$password
-
-	host:
-	$HOSTNAME
-	---
-EOF
-
-exit 0
+		# Archive the user's home directory and move it to archive_dir
+		home_dir="/home/$username"
+		archive_file="$archive_dir/$username.tgz"
+		if [[ -d "$home_dir" ]]; then
+			echo "Archiving $home_dir to $archive_file"
+			tar -zcf $archive_file $home_dir &> /dev/null
+			if [[ "$?" -ne 0 ]]; then
+				echo "Could not create $archive_file" >&2
+				exit 1
+			fi
+		else
+			echo "$home_dir does not exist or is not a directory" >&2
