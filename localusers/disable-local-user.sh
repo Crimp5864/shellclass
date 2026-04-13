@@ -27,6 +27,14 @@ EOF
 	exit 1
 }
 
+bail_out () {
+	# Check exit code and exit with error if non-zero
+	if [[ "$?" -ne 0 ]]; then
+		echo "$*" >&2
+		exit 1
+	fi
+}
+
 archive_dir='/archive'
 
 # Check if user is root and exit with error if not
@@ -77,10 +85,7 @@ for username in "$@"; do
 		if [[ ! -d "$archive_dir" ]]; then
 			echo "Creating $archive_dir directory"
 			mkdir -p "$archive_dir"
-			if [[ "$?" -ne 0 ]]; then
-				echo "The archive directory $archive_dir could not be created" >&2
-				exit 1
-			fi
+			bail_out "The archive directory $archive_dir could not be created"
 		fi
 
 		# Archive the user's home directory and move it to archive_dir
@@ -89,10 +94,7 @@ for username in "$@"; do
 		if [[ -d "$home_dir" ]]; then
 			echo "Archiving $home_dir to $archive_file"
 			tar -zcf $archive_file $home_dir &> /dev/null
-			if [[ "$?" -ne 0 ]]; then
-				echo "Could not create $archive_file" >&2
-				exit 1
-			fi
+			bail_out "Could not create $archive_file"
 		else
 			echo "$home_dir does not exist or is not a directory" >&2
 			exit 1
@@ -106,19 +108,13 @@ for username in "$@"; do
 		userdel $remove_home "$username" &> /dev/null
 
 		# Check to see if userdel succeeded
-		if [[ "$?" -ne 0 ]]; then
-			echo "Unable to delete account $username" >&2
-			exit 1
-		fi
+		bail_out "Unable to delete account $username"
 		echo "The account $username was deleted"
 	else
 		chage -E 0 "$username"
 
 		# Check to see if chage succeeded
-		if [[ "$?" -ne 0 ]]; then
-			echo "Unable to disable account $username" >&2
-			exit 1
-		fi
+		bail_out "Unable to disable account $username"
 		echo "The account $username was disabled"
 	fi
 done
